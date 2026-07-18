@@ -22,8 +22,8 @@ ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
 
 # Run composer install at build time (--no-scripts skips artisan commands that need .env)
+# --optimize-autoloader already generates optimized autoload files, no need for separate dump-autoload
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts \
-    && composer dump-autoload --optimize \
     && test -f /var/www/html/vendor/autoload.php \
     && echo "vendor/autoload.php OK"
 
