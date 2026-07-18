@@ -124,7 +124,7 @@ class AdminGalleryController extends Controller
         if ($request->hasFile('thumbnail')) {
             $file     = $request->file('thumbnail');
             $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            $file->move(base_path('../ecommerce/upload/video_image'), $filename);
+            $file->move(storage_path('upload/video_image'), $filename);
             $data['video_thumbnail'] = $filename;
         }
 
@@ -175,7 +175,7 @@ class AdminGalleryController extends Controller
         if ($request->hasFile('thumbnail')) {
             $file     = $request->file('thumbnail');
             $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
-            $file->move(base_path('../ecommerce/upload/video_image'), $filename);
+            $file->move(storage_path('upload/video_image'), $filename);
             $data['video_thumbnail'] = $filename;
         }
 
