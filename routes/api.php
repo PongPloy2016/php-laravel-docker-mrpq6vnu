@@ -23,5 +23,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 Route::get('/videolist', 'VideoApiController@index');       // list + pagination + search
+Route::get('/videoListRandom', 'VideoApiController@random'); // random items
 Route::get('/videolist/{id}', 'VideoApiController@show');   // single video detail
 Route::get('/category_list', 'VideoApiController@categories'); // distinct categories

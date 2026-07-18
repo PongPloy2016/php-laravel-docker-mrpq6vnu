@@ -85,6 +85,61 @@ class VideoApiController extends Controller
     }
 
     /**
+     * GET /api/videoListRandom
+     *
+     * Returns random video gallery items.
+     */
+    public function random(Request $request)
+    {
+        $count = max(1, min(50, (int) $request->input('count', 10)));
+        $catId = $request->input('cat_id', '');
+
+        $query = Gallery::where('video_status', 1);
+
+        if ($catId) {
+            $query->where('cat_id', (int) $catId);
+        }
+
+        // Random sorting based on database driver (mysql = RAND(), pgsql = RANDOM())
+        if (config('database.default') === 'pgsql') {
+            $query->orderByRaw('RANDOM()');
+        } else {
+            $query->orderByRaw('RAND()');
+        }
+
+        $countTotal = $query->count();
+        $pages      = (int) ceil($countTotal / $count);
+
+        $videos = $query->take($count)->get();
+
+        $posts = $videos->map(function ($v) {
+            return [
+                'vid'               => $v->id,
+                'cat_id'            => $v->cat_id,
+                'video_title'       => $v->video_title,
+                'video_url'         => $v->video_url,
+                'video_id'          => $v->video_id,
+                'video_thumbnail'   => $v->getThumbnailUrl(),
+                'video_duration'    => $v->video_duration,
+                'video_description' => $v->video_description,
+                'video_type'        => $v->video_type,
+                'video_status'      => (string) $v->video_status,
+                'size'              => $v->size,
+                'total_views'       => (string) $v->total_views,
+                'date_time'         => $v->date_time,
+            ];
+        });
+
+        return response()->json([
+            'status'      => 'ok',
+            'count'       => $videos->count(),
+            'count_total' => $countTotal,
+            'pages'       => $pages,
+            'posts'       => $posts,
+        ]);
+    }
+
+    /**
      * GET /api/videolist/{id}
      *
      * Return a single video by id.
