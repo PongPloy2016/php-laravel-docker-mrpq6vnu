@@ -1,6 +1,10 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
-COPY . .
+# Copy source code
+COPY . /var/www/html
+
+# Set working directory
+WORKDIR /var/www/html
 
 # Image config
 ENV SKIP_COMPOSER 1
@@ -16,5 +20,8 @@ ENV LOG_CHANNEL stderr
 
 # Allow composer to run as root
 ENV COMPOSER_ALLOW_SUPERUSER 1
+
+# Run composer install at build time so vendor/ is always present
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 CMD ["/start.sh"]
