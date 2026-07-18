@@ -3,8 +3,8 @@
 namespace App;
 
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -16,7 +16,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'mobile', 'mobile_2', 'school', 'address', 'city', 'percent_10', 'percent_11', 'role'
     ];
 
     /**
@@ -28,12 +28,32 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+
+    public function answers() {
+      return $this->hasOne('App\Answer');
+    }
+
+    public function topic() {
+      return $this->belongsToMany('App\Topic','topic_user')
+        ->withPivot('amount','transaction_id','status')
+        ->withTimestamps();
+    }
+
+    public function authentications()
+    {
+        return $this->hasMany(Authentication::class);
+    }
+
+    public function is_admin() {
+      if (Auth::check()) {
+        if (Auth::user()->role == 'A') {
+          return true;
+        }
+        return false;
+      }
+      return false;
+    }
+    public function notifyAuthenticationLogVia() {
+      
+    }
 }
