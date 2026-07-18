@@ -24,65 +24,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/debug-db', function () {
-    try {
-        \DB::connection()->getPdo();
-        $dbStatus = "Connected successfully to: " . \DB::connection()->getDatabaseName();
-    } catch (\Exception $e) {
-        $dbStatus = "Database Connection Failed: " . $e->getMessage();
-    }
 
-    $seederStatus = "Not Run";
-    try {
-        $settingsCount = \App\Setting::count();
-        if ($settingsCount === 0) {
-            // Force running migrations and seeding directly
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            
-            \Illuminate\Support\Facades\DB::table('settings')->insert([
-                'logo'          => 'default_logo.png',
-                'favicon'       => 'default_favicon.ico',
-                'welcome_txt'   => 'Quick Quiz',
-                'coming_soon'   => 0,
-                'comingsoon_enabled_ip' => null,
-                'created_at'    => now(),
-                'updated_at'    => now(),
-            ]);
-            
-            if (\Illuminate\Support\Facades\DB::table('copyrighttexts')->count() === 0) {
-                \Illuminate\Support\Facades\DB::table('copyrighttexts')->insert([
-                    'id' => 1,
-                    'name' => '© ' . date('Y') . ' Quick Quiz. All Rights Reserved.',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            
-            $seederStatus = "Seeded settings and copyright texts successfully!";
-            
-            // Re-fetch
-            $settingsCount = \App\Setting::count();
-        }
-        $firstSetting = \App\Setting::first();
-        $settingStatus = "Settings count: $settingsCount. First welcome text: " . ($firstSetting ? $firstSetting->welcome_txt : 'None');
-    } catch (\Exception $e) {
-        $settingStatus = "Settings Query/Seed Failed: " . $e->getMessage();
-    }
-
-    return [
-        'database' => $dbStatus,
-        'settings' => $settingStatus,
-        'seeder_status' => $seederStatus,
-        'php_version' => PHP_VERSION,
-        'app_env' => config('app.env'),
-        'app_debug' => config('app.debug'),
-        'config_db_default' => config('database.default'),
-        'env_db_connection' => env('DB_CONNECTION'),
-        'getenv_db_connection' => getenv('DB_CONNECTION'),
-        'env_keys' => array_keys($_ENV),
-        'getenv_keys' => array_keys(getenv()),
-    ];
-});
 
 Route::group(['middleware'=> 'coming_soon'], function(){
 
