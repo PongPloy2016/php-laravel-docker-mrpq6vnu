@@ -33,4 +33,10 @@ if [ -f /var/www/html/database/quiz_db.sql ]; then
   php artisan db:import-dump /var/www/html/database/quiz_db.sql || echo "⚠️ Import failed, but continuing..."
 fi
 
+echo "Clearing caches to ensure dynamic environment variables and fresh views are used..."
+php artisan view:clear
+php artisan config:clear
+php artisan route:clear
+php artisan cache:clear
+
 echo "=== Deploy complete ==="

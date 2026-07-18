@@ -217,7 +217,8 @@
         ->get();
 
     // 📉 3. Monthly Exam Completion Trends
-    $dbDriver = config('database.default');
+    // 📉 3. Monthly Exam Completion Trends
+    $dbDriver = DB::connection()->getDriverName();
     if ($dbDriver === 'pgsql') {
         $monthly_stats = DB::table('tests')
             ->select(DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"), DB::raw('COUNT(*) as count'))
