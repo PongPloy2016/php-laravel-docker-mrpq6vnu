@@ -217,13 +217,24 @@
         ->get();
 
     // 📉 3. Monthly Exam Completion Trends
-    $monthly_stats = DB::table('tests')
-        ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"), DB::raw('COUNT(*) as count'))
-        ->groupBy('month')
-        ->orderBy('month')
-        ->get()
-        ->pluck('count', 'month')
-        ->toArray();
+    $dbDriver = config('database.default');
+    if ($dbDriver === 'pgsql') {
+        $monthly_stats = DB::table('tests')
+            ->select(DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"), DB::raw('COUNT(*) as count'))
+            ->groupBy(DB::raw("TO_CHAR(created_at, 'YYYY-MM')"))
+            ->orderBy('month')
+            ->get()
+            ->pluck('count', 'month')
+            ->toArray();
+    } else {
+        $monthly_stats = DB::table('tests')
+            ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"), DB::raw('COUNT(*) as count'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->pluck('count', 'month')
+            ->toArray();
+    }
 
     $trend_labels = [];
     $trend_data = [];
