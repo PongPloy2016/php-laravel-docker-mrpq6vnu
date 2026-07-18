@@ -1,73 +1,128 @@
 @extends('layouts.app')
 
+@section('head')
+  <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+  <script>
+    window.Laravel =  <?php echo json_encode([
+        'csrfToken' => csrf_token(),
+    ]); ?>
+  </script>
+@endsection
+
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Login') }}</div>
-
-                <div class="card-body">
-                    <form method="POST" action="{{ route('login') }}">
-                        @csrf
-
-                        <div class="form-group row">
-                            <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
-
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <div class="col-md-6 offset-md-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-
-                                    <label class="form-check-label" for="remember">
-                                        {{ __('Remember Me') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group row mb-0">
-                            <div class="col-md-8 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Login') }}
-                                </button>
-
-                                @if (Route::has('password.request'))
-                                    <a class="btn btn-link" href="{{ route('password.request') }}">
-                                        {{ __('Forgot Your Password?') }}
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  <div class="">
+    <div class="container">
+      @if (Session::has('error'))
+        <div class="alert alert-danger sessionmodal" role="alert">
+          {{session('error')}}
         </div>
+      @endif
+
+      <div class="login-page">
+        <div class="logo">
+          @if ($setting)
+            <a href="{{url('/')}}" title="{{$setting->welcome_txt}}">
+              <img src="{{asset('/images/logo/'.$setting->logo)}}" class="login-logo img-responsive" alt="{{$setting->welcome_txt}}">
+            </a>
+          @endif
+        </div>
+
+        <h4 class="user-register-heading text-center">Login</h4>
+        <div class="row">
+          @php
+            $fb_status = App\Setting::select('fb_login')->where('id','=',1)->first();
+            $g_status = App\Setting::select('google_login')->where('id','=',1)->first();
+            $gitlab_status = App\Setting::select('gitlab_login')->where('id','=',1)->first();
+          @endphp
+
+          @if($fb_status->fb_login == 1)
+            <div class="col-md-12">
+              <a onclick="window.open('{{ route('sociallogin','facebook') }}','popup','width=600','height=600')" class="btn btn-facebook btn-block" role="button" aria-label="Login with Facebook">
+                <i class="fa fa-facebook" aria-hidden="true"></i> {{ __('Facebook')}}
+              </a>
+            </div>
+          @endif
+
+          @if($gitlab_status->gitlab_login == 1)
+            <div class="gap col-md-12 mt-5">
+              <a onclick="window.open('{{ route('sociallogin','gitlab') }}','popup','width=600','height=600')" class="btn btn-gitlab btn-block" role="button" aria-label="Login with Gitlab">
+              <i class="fa fa-gitlab" aria-hidden="true"></i> {{ __('Gitlab')}}
+            </a>
+            </div>
+          @endif
+
+          @if($g_status->google_login == 1)
+            <div class="gap col-md-12 mt-5">
+              <a onclick="window.open('{{ route('sociallogin','google') }}','popup','width=600','height=600')" class="btn btn-google btn-block" role="button" aria-label="Login with Google">
+                <i class="fa fa-google" aria-hidden="true"></i> Google
+              </a>
+            </div>
+          @endif
+        </div>
+        <br>
+
+        <form class="form login-form" method="POST" action="{{ route('login') }}" role="form" aria-label="Login Form">
+          {{ csrf_field() }}
+          <div class="form-group{{ $errors->has('email') ? ' has-error' : '' }}">
+            <label for="email" class="sr-only">Email</label>
+            <input id="email" type="email" class="form-control email-input" name="email" value="{{ old('email') }}" placeholder="Enter Your Email" required autofocus maxlength="60" aria-label="Email Address">
+            @if ($errors->has('email'))
+              <span class="help-block" role="alert">
+                <strong>{{ $errors->first('email') }}</strong>
+              </span>
+            @endif
+          </div>
+
+          <div class="form-group{{ $errors->has('password') ? ' has-error' : '' }}">
+            <label for="password" class="sr-only">Password</label>
+            <div class="password-wrapper">
+              <input id="password" type="password" class="form-control" name="password" placeholder="Enter Password" required aria-label="Password">
+              <span class="toggle-password-btn" role="button" tabindex="0" aria-label="Toggle password visibility">
+                <i class="fa fa-eye" aria-hidden="true"></i>
+              </span>
+            </div>
+            @if ($errors->has('password'))
+              <span class="help-block" role="alert">
+                <strong>{{ $errors->first('password') }}</strong>
+              </span>
+            @endif
+          </div>
+
+          <div class="form-group">
+            <div class="checkbox remember-me">
+              <label>
+                <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}>
+                 Remember Me
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <button type="submit" class="btn btn-wave"> Login </button>
+            <p class="messege text-center">
+              Not registered?
+              <a href="{{url('/register')}}" title="Create An Account">Create an account</a>
+            </p>
+          </div>
+
+          <div class="form-group text-center">
+            <a href="{{url('/password/reset')}}" title="Forgot Password">Forgot Password?</a>
+          </div>
+        </form>
+      </div>
     </div>
-</div>
+  </div>
+@endsection
+
+@section('scripts')
+  <script>
+    $(function () {
+      $( document ).ready(function() {
+         $('.sessionmodal').addClass("active");
+         setTimeout(function() {
+             $('.sessionmodal').removeClass("active");
+        }, 4500);
+      });
+    });
+  </script>
 @endsection

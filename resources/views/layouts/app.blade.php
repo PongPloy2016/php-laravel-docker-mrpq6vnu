@@ -1,80 +1,117 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ app()->getLocale() }}">
 <head>
+    <meta name="description" content="Quiz Application">
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}" defer></script>
-
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-
+    <link href="{{asset('/images/logo/'. $setting->favicon)}}" rel="icon" type="image/ico">
+    <link href="{{asset('css/font-awesome.min.css')}}" rel="stylesheet">
+    <link href="{{asset('css/custom-style.css')}}" rel="stylesheet">
+    <style>
+      /* ADA Focus styles */
+      a:focus, button:focus, input:focus, select:focus, textarea:focus {
+        outline: 2px solid #4A90D9;
+        outline-offset: 2px;
+      }
+      .sr-only-focusable:focus {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 10000 !important;
+        padding: 10px 15px !important;
+        background: #000 !important;
+        color: #fff !important;
+        text-decoration: none !important;
+        font-weight: bold !important;
+      }
+      /* Responsive fixes */
+      @media (max-width: 767px) {
+        .login-page { padding: 15px; }
+        .login-logo { max-width: 200px; margin: 0 auto; }
+        .topic-block { margin-bottom: 20px; }
+        .quiz-main-block .col-md-4 { width: 100%; }
+        .front-footer .col-md-6 { text-align: center; margin-bottom: 10px; }
+        .nav-bar .heading { font-size: 16px; }
+        .logo-main-block img { max-width: 100%; height: auto; }
+        .card-content { padding: 10px; }
+        .topic-detail { padding-left: 10px; }
+        .navbar-toggle { margin-top: 8px; margin-right: 0; }
+      }
+      @media (max-width: 480px) {
+        .btn-wave, .btn-facebook, .btn-google, .btn-gitlab { font-size: 14px; padding: 8px 12px; }
+        h1.main-block-heading { font-size: 24px; }
+        .user-register-heading { font-size: 20px; }
+      }
+      /* Password toggle - overlay icon inside input */
+      .password-wrapper {
+        position: relative;
+      }
+      .password-wrapper .form-control {
+        padding-right: 40px;
+      }
+      .password-wrapper .toggle-password-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #888;
+        z-index: 3;
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+      }
+      .password-wrapper .toggle-password-btn:hover {
+        color: #333;
+      }
+    </style>
+    <!--[if IE]>
+        <link rel="shortcut icon" href="/favicon.ico" type="image/vnd.microsoft.icon">
+    <![endif]-->    
+    <meta name="csrf-token" content="{{ csrf_token() }}">    
+    <title>{{$setting->welcome_txt}}</title>
     <!-- Styles -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    @yield('head')
+
 </head>
 <body>
-    <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
-                </a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav mr-auto">
-
-                    </ul>
-
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ml-auto">
-                        <!-- Authentication Links -->
-                        @guest
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                            </li>
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }} <span class="caret"></span>
-                                </a>
-
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                        @csrf
-                                    </form>
-                                </div>
-                            </li>
-                        @endguest
-                    </ul>
+    <a href="#main-content" class="sr-only sr-only-focusable" style="position:absolute;top:-40px;left:0;background:#000;color:#fff;padding:8px;z-index:10000;transition:top 0.3s;">Skip to main content</a>
+    <div id="app" style="position: relative;">
+        @yield('top_bar')
+        <main id="main-content" role="main">
+        @yield('content')
+        </main>
+        <br>
+        <br>
+    </div>
+    @php
+     $ct = App\copyrighttext::where('id','=',1)->first();
+    @endphp
+    
+   <div class="front-footer">
+        <div class="container" >
+            <div class="row">
+                <div class="col-md-6">
+                    {{ $ct->name }}
+                </div>
+                <div class="col-md-6">
+                    @php
+                    $si = App\SocialIcons::all();
+                    @endphp
+                    @foreach($si as $s)
+                    @if($s->status==1)
+                        <a target="_blank" title="Visit {{ $s->title }}" href="{{ $s->url }}"><img width="32px" src="{{ asset('images/socialicons/'.$s->icon) }}" alt="{{ $s->title }}" title="{{ $s->title }}" style="margin-top:-5px;z-index:9999;"></a>
+                    @endif
+                    @endforeach
                 </div>
             </div>
-        </nav>
-
-        <main class="py-4">
-            @yield('content')
-        </main>
-    </div>
+        </div>
+    </div>   
+    <script src="{{ asset('js/app.js') }}"></script>
+    <script src="{{ asset('js/custom-js.js') }}"></script>
+    @include('partials.validation-scripts')
+    @yield('scripts')
 </body>
 </html>
