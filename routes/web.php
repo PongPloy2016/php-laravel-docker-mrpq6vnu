@@ -24,7 +24,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
+Route::get('/check-db-status', function () {
+    try {
+        $galleryCount = \DB::table('tbl_gallery')->count();
+        $questionsCount = \DB::table('questions')->count();
+        $answersCount = \DB::table('answers')->count();
+    } catch (\Exception $e) {
+        $galleryCount = "Error: " . $e->getMessage();
+        $questionsCount = "Error: " . $e->getMessage();
+        $answersCount = "Error: " . $e->getMessage();
+    }
+    return [
+        'active_commit' => env('RENDER_GIT_COMMIT'),
+        'tbl_gallery_count' => $galleryCount,
+        'questions_count' => $questionsCount,
+        'answers_count' => $answersCount,
+        'current_time' => now()->toIso8601String(),
+    ];
+});
 
 Route::group(['middleware'=> 'coming_soon'], function(){
 
