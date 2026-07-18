@@ -2,6 +2,32 @@
 
 /*
 |--------------------------------------------------------------------------
+| Load environment variables from render.yaml as fallback
+|--------------------------------------------------------------------------
+*/
+$renderYamlPath = dirname(__DIR__) . '/render.yaml';
+if (file_exists($renderYamlPath)) {
+    $lines = file($renderYamlPath);
+    $currentKey = null;
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (preg_match('/^-\s*key:\s*(.+)$/', $line, $matches)) {
+            $currentKey = trim($matches[1]);
+        } elseif (preg_match('/^value:\s*(.+)$/', $line, $matches) && $currentKey) {
+            $val = trim($matches[1], " '\"");
+            // Only set if not already defined in environment
+            if (!getenv($currentKey)) {
+                putenv("$currentKey=$val");
+                $_ENV[$currentKey] = $val;
+                $_SERVER[$currentKey] = $val;
+            }
+            $currentKey = null;
+        }
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Create The Application
 |--------------------------------------------------------------------------
 |
