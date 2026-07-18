@@ -8,6 +8,9 @@ if [ ! -f /var/www/html/vendor/autoload.php ]; then
   composer install --no-dev --optimize-autoloader --no-interaction --working-dir=/var/www/html
 fi
 
+echo "Discovering packages..."
+php artisan package:discover --ansi
+
 echo "Caching config..."
 php artisan config:cache
 

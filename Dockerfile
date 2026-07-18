@@ -21,9 +21,10 @@ ENV APP_ENV production
 ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
 
-# Run composer install at build time so vendor/ is always present
-RUN composer install --no-dev --optimize-autoloader --no-interaction \
+# Run composer install at build time (--no-scripts skips artisan commands that need .env)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts \
+    && composer dump-autoload --optimize \
     && test -f /var/www/html/vendor/autoload.php \
-    && echo "✅ vendor/autoload.php verified"
+    && echo "vendor/autoload.php OK"
 
 CMD ["/start.sh"]
