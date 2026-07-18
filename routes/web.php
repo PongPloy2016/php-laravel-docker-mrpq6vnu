@@ -24,6 +24,31 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/debug-db', function () {
+    try {
+        \DB::connection()->getPdo();
+        $dbStatus = "Connected successfully to: " . \DB::connection()->getDatabaseName();
+    } catch (\Exception $e) {
+        $dbStatus = "Database Connection Failed: " . $e->getMessage();
+    }
+
+    try {
+        $settingsCount = \App\Setting::count();
+        $firstSetting = \App\Setting::first();
+        $settingStatus = "Settings count: $settingsCount. First welcome text: " . ($firstSetting ? $firstSetting->welcome_txt : 'None');
+    } catch (\Exception $e) {
+        $settingStatus = "Settings Query Failed: " . $e->getMessage();
+    }
+
+    return [
+        'database' => $dbStatus,
+        'settings' => $settingStatus,
+        'php_version' => PHP_VERSION,
+        'app_env' => config('app.env'),
+        'app_debug' => config('app.debug'),
+    ];
+});
+
 Route::group(['middleware'=> 'coming_soon'], function(){
 
   Route::redirect('/', 'home');
