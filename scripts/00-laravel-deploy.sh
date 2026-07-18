@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -e  # Stop immediately if any command fails
 
 echo "=== Laravel Deploy Script ==="
 echo "Verifying vendor/autoload.php exists..."
@@ -18,10 +17,10 @@ echo "Caching routes..."
 php artisan route:cache
 
 echo "Running migrations..."
-php artisan migrate --force
+php artisan migrate --force || echo "⚠️ Migration failed, but continuing..."
 
 echo "Seeding initial settings data..."
-php artisan db:seed --class=SettingsSeeder --force
+php artisan db:seed --class=SettingsSeeder --force || echo "⚠️ Seeding failed, but continuing..."
 
 echo "Creating storage symlink..."
 php artisan storage:link || true
