@@ -28,4 +28,9 @@ php artisan storage:link || true
 echo "Optimizing..."
 php artisan optimize
 
+if [ -f /var/www/html/database/quiz_db.sql ]; then
+  echo "Found database/quiz_db.sql. Importing database dump..."
+  php artisan db:import-dump /var/www/html/database/quiz_db.sql || echo "⚠️ Import failed, but continuing..."
+fi
+
 echo "=== Deploy complete ==="
