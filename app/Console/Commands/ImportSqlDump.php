@@ -70,6 +70,7 @@ class ImportSqlDump extends Command
             return $posA <=> $posB;
         });
 
+        $clearedTables = [];
         foreach ($matches as $match) {
                 $table = $match[1];
                 $columnsStr = $match[2];
@@ -142,17 +143,20 @@ class ImportSqlDump extends Command
                     }
                     $rowData[] = $rowMap;
                 }
-                try {
-                    // Clear the table first to avoid duplicate primary keys
-                    DB::table($table)->truncate();
-                    $this->info("Truncated table: $table");
-                } catch (\Exception $e) {
+                if (!in_array($table, $clearedTables)) {
                     try {
-                        DB::table($table)->delete();
-                        $this->info("Cleared table using DELETE: $table");
-                    } catch (\Exception $e2) {
-                        $this->warn("Could not clear table $table: " . $e2->getMessage());
+                        // Clear the table first to avoid duplicate primary keys
+                        DB::table($table)->truncate();
+                        $this->info("Truncated table: $table");
+                    } catch (\Exception $e) {
+                        try {
+                            DB::table($table)->delete();
+                            $this->info("Cleared table using DELETE: $table");
+                        } catch (\Exception $e2) {
+                            $this->warn("Could not clear table $table: " . $e2->getMessage());
+                        }
                     }
+                    $clearedTables[] = $table;
                 }
 
                 try {
