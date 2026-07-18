@@ -22,13 +22,6 @@ class CreateTblGalleryTable extends Migration
                 $table->integer('video_status')->default(1);
                 $table->string('size')->nullable();
                 $table->integer('total_views')->default(0);
-                $table->timestamp('date_time')->useCurrent();
-            });
-        } else {
-            Schema::table('tbl_gallery', function (Blueprint $table) {
-                if (!Schema::hasColumn('tbl_gallery', 'date_time')) {
-                    $table->timestamp('date_time')->useCurrent();
-                }
             });
         }
     }

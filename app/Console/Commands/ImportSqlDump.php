@@ -40,67 +40,144 @@ class ImportSqlDump extends Command
         // Standardize line endings
         $content = str_replace("\r\n", "\n", $content);
 
-        // Find all INSERT INTO statement blocks
-        preg_match_all('/INSERT INTO\s+`([^`]+)`\s*\(([^)]+)\)\s*VALUES\s*(.*?);/s', $content, $matches, PREG_SET_ORDER);
+        // Find all INSERT INTO statement blocks (matching until a semicolon followed by a newline or end of file)
+        preg_match_all('/INSERT INTO\s+`([^`]+)`\s*\(([^)]+)\)\s*VALUES\s*(.*?);(?:\n|$)/s', $content, $matches, PREG_SET_ORDER);
 
         $this->info("Found " . count($matches) . " INSERT statements.");
 
+        $isPgsql = (config('database.default') === 'pgsql');
+
+        // Order tables based on dependencies to avoid foreign key violations on any database
+        $tableOrder = [
+            'topics',
+            'users',
+            'questions',
+            'answers',
+            'authentication_log',
+            'sessions'
+        ];
+
+        usort($matches, function($a, $b) use ($tableOrder) {
+            $tableA = $a[1];
+            $tableB = $b[1];
+
+            $posA = array_search($tableA, $tableOrder);
+            $posB = array_search($tableB, $tableOrder);
+
+            $posA = ($posA === false) ? -1 : $posA;
+            $posB = ($posB === false) ? -1 : $posB;
+
+            return $posA <=> $posB;
+        });
+
         foreach ($matches as $match) {
-            $table = $match[1];
-            $columnsStr = $match[2];
-            $valuesStr = $match[3];
+                $table = $match[1];
+                $columnsStr = $match[2];
+                $valuesStr = $match[3];
 
-            if ($table === 'migrations') {
-                $this->info("Skipping migrations table.");
-                continue;
-            }
-
-            $this->info("Importing into table: $table");
-
-            // Clean columns: replace backticks with double quotes or remove them
-            $columns = str_replace('`', '"', $columnsStr);
-
-            // MySQL escapes strings using \', but Postgres needs ''
-            $cleanedValues = str_replace("\\'", "''", $valuesStr);
-            $cleanedValues = str_replace('\\"', '"', $cleanedValues);
-
-            // Reconstruct insert statement compatible with PostgreSQL
-            $query = "INSERT INTO \"$table\" ($columns) VALUES $cleanedValues;";
-
-            try {
-                // Clear the table first to avoid duplicate primary keys
-                DB::table($table)->truncate();
-                $this->info("Truncated table: $table");
-            } catch (\Exception $e) {
-                try {
-                    DB::table($table)->delete();
-                    $this->info("Cleared table using DELETE: $table");
-                } catch (\Exception $e2) {
-                    $this->warn("Could not clear table $table: " . $e2->getMessage());
+                if ($table === 'migrations') {
+                    $this->info("Skipping migrations table.");
+                    continue;
                 }
-            }
 
-            try {
-                DB::unprepared($query);
-                $this->info("Successfully imported $table.");
-            } catch (\Exception $e) {
-                $this->error("Failed to import $table: " . $e->getMessage());
-                $this->error("Query snippet: " . substr($query, 0, 500) . "...");
-            }
+                $this->info("Importing into table: $table");
 
-            // Reset sequence in PostgreSQL to avoid autoincrement errors on next inserts
-            if (config('database.default') === 'pgsql') {
-                try {
-                    $maxId = DB::table($table)->max('id');
-                    if ($maxId) {
-                        DB::statement("SELECT setval(pg_get_serial_sequence('$table', 'id'), $maxId);");
-                        $this->info("Reset sequence for $table to $maxId.");
+                // Parse columns list
+                $columns = array_map(function($col) {
+                    return trim($col, ' "`\'');
+                }, explode(',', $columnsStr));
+
+                // Get boolean columns if pgsql to cast them properly
+                $booleanColumns = [];
+                if ($isPgsql) {
+                    try {
+                        $booleanColumns = collect(DB::select("
+                            SELECT column_name 
+                            FROM information_schema.columns 
+                            WHERE table_name = :table 
+                              AND data_type = 'boolean'
+                        ", ['table' => $table]))->pluck('column_name')->toArray();
+                    } catch (\Exception $e) {
+                        $this->warn("Could not fetch boolean columns: " . $e->getMessage());
                     }
+                }
+
+                // Clean up values block: normalize newlines
+                $valuesStr = str_replace("\r\n", "\n", $valuesStr);
+                $trimmedValues = trim($valuesStr);
+                if (substr($trimmedValues, 0, 1) === '(') {
+                    $trimmedValues = substr($trimmedValues, 1);
+                }
+                if (substr($trimmedValues, -1) === ')') {
+                    $trimmedValues = substr($trimmedValues, 0, -1);
+                }
+
+                // Split into individual rows using the row separator "),\\n("
+                $rows = explode("),\n(", $trimmedValues);
+                $this->info("Parsing " . count($rows) . " rows for table $table...");
+
+                $rowData = [];
+                foreach ($rows as $rowIndex => $rowLine) {
+                    // Use PHP's built-in CSV parser to properly handle escaped quotes and commas
+                    $parsedValues = str_getcsv($rowLine, ',', "'", "\\");
+
+                    $rowMap = [];
+                    foreach ($columns as $index => $col) {
+                        $val = isset($parsedValues[$index]) ? $parsedValues[$index] : null;
+                        if ($val !== null) {
+                            $val = trim($val);
+                        }
+
+                        // Standardize null values
+                        if ($val === 'NULL' || $val === 'null' || $val === null) {
+                            $rowMap[$col] = null;
+                        } else {
+                            // Cast boolean columns appropriately
+                            if (in_array($col, $booleanColumns)) {
+                                $rowMap[$col] = ($val === '1' || $val === 1 || strtolower($val) === 'true');
+                            } else {
+                                $rowMap[$col] = $val;
+                            }
+                        }
+                    }
+                    $rowData[] = $rowMap;
+                }
+                try {
+                    // Clear the table first to avoid duplicate primary keys
+                    DB::table($table)->truncate();
+                    $this->info("Truncated table: $table");
                 } catch (\Exception $e) {
-                    $this->warn("Could not reset sequence for $table: " . $e->getMessage());
+                    try {
+                        DB::table($table)->delete();
+                        $this->info("Cleared table using DELETE: $table");
+                    } catch (\Exception $e2) {
+                        $this->warn("Could not clear table $table: " . $e2->getMessage());
+                    }
+                }
+
+                try {
+                    // Insert rows in chunks of 100 to optimize performance
+                    foreach (array_chunk($rowData, 100) as $chunk) {
+                        DB::table($table)->insert($chunk);
+                    }
+                    $this->info("Successfully imported $table.");
+                } catch (\Exception $e) {
+                    $this->error("Failed to import $table: " . $e->getMessage());
+                }
+
+                // Reset sequence in PostgreSQL to avoid autoincrement errors on next inserts
+                if ($isPgsql) {
+                    try {
+                        $maxId = DB::table($table)->max('id');
+                        if ($maxId) {
+                            DB::statement("SELECT setval(pg_get_serial_sequence('$table', 'id'), $maxId);");
+                            $this->info("Reset sequence for $table to $maxId.");
+                        }
+                    } catch (\Exception $e) {
+                        $this->warn("Could not reset sequence for $table: " . $e->getMessage());
+                    }
                 }
             }
-        }
 
         $this->info("Import process completed!");
         return 0;
