@@ -21,14 +21,12 @@ ENV APP_ENV production
 ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
 
-# สลับเป็น User nginx เพื่อรัน composer
-USER nginx
+# รัน composer install ในฐานะ root เพื่อหลีกเลี่ยงสิทธิ์โฟลเดอร์เขียน cache
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs \
     && test -f /var/www/html/vendor/autoload.php \
     && echo "vendor/autoload.php OK"
 
-# สลับเป็น root เพื่อจัดการสิทธิ์โฟลเดอร์สำหรับ Laravel Storage
-USER root
+# จัดการสิทธิ์โฟลเดอร์สำหรับ Laravel
 RUN chown -R nginx:nginx /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache
