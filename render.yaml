@@ -1,8 +1,27 @@
 services:
   - type: web
-    name: php-laravel-app
+    name: php-laravel-mrpq
     env: docker
-    plan: free # หรือ plan ที่ต้องการ
+    plan: free
+    region: oregon # แมตช์ตามโซนของ Database ใน Host ที่ให้มา
     envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
       - key: APP_KEY
-        generateValue: true
+        generateValue: true # ให้ Render เจนรหัสความปลอดภัยให้อัตโนมัติ ป้องกัน Error 500
+      
+      # โยงฐานข้อมูลเข้ากับ App 
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: dpg-d9d61hurnols73cue66g-a.oregon-postgres.render.com
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: my_3py7
+      - key: DB_USERNAME
+        value: my_3py7_user
+      - key: DB_PASSWORD
+        value: 2RA7Oty67pkYNkuhwunWUg0QYP2djX8i
