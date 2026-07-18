@@ -16,3 +16,12 @@ use Illuminate\Http\Request;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+/*
+|--------------------------------------------------------------------------
+| Video Gallery API (public, no auth required)
+|--------------------------------------------------------------------------
+*/
+Route::get('/videolist', 'VideoApiController@index');       // list + pagination + search
+Route::get('/videolist/{id}', 'VideoApiController@show');   // single video detail
+Route::get('/category_list', 'VideoApiController@categories'); // distinct categories
