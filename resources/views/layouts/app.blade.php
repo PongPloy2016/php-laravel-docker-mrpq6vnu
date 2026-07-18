@@ -94,7 +94,7 @@
         <div class="container" >
             <div class="row">
                 <div class="col-md-6">
-                    {{ $ct->name }}
+                    {{ $ct ? $ct->name : '© ' . date('Y') . ' Quick Quiz' }}
                 </div>
                 <div class="col-md-6">
                     @php

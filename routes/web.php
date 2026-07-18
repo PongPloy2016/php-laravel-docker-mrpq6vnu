@@ -49,7 +49,16 @@ Route::get('/debug-db', function () {
                 'updated_at'    => now(),
             ]);
             
-            $seederStatus = "Seeded directly using DB insert successfully!";
+            if (\Illuminate\Support\Facades\DB::table('copyrighttexts')->count() === 0) {
+                \Illuminate\Support\Facades\DB::table('copyrighttexts')->insert([
+                    'id' => 1,
+                    'name' => '© ' . date('Y') . ' Quick Quiz. All Rights Reserved.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            
+            $seederStatus = "Seeded settings and copyright texts successfully!";
             
             // Re-fetch
             $settingsCount = \App\Setting::count();
