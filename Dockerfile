@@ -1,9 +1,9 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Allow composer to run as root
+# Allow composer to run as root 
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# [แก้ไข]: เพิ่ม --chown=nginx:nginx เพื่อให้ User nginx มีสิทธิ์อ่านเขียนไฟล์ที่ก๊อปปี้เข้าไป
+# Copy Source code และตั้ง owner เป็น nginx ทันที
 COPY --chown=nginx:nginx . /var/www/html
 
 # Set working directory
@@ -21,19 +21,16 @@ ENV APP_ENV production
 ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
 
-# [แก้ไข]: สลับมาใช้ User root ก่อนชั่วคราว เพื่อสั่งเปลี่ยนสิทธิ์โฟลเดอร์ให้ชัวร์
-USER root
-RUN chown -R nginx:nginx /var/www/html
-
-# [แก้ไข]: สลับกลับเป็น User nginx เพื่อรัน composer install แบบปลอดภัย
+# สลับเป็น User nginx เพื่อรัน composer
 USER nginx
-
-# [แก้ไข]: เพิ่ม --ignore-platform-reqs ป้องกันกรณี Extension บน Render ไม่ตรงกับ composer.json
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs \
     && test -f /var/www/html/vendor/autoload.php \
     && echo "vendor/autoload.php OK"
 
-# [แก้ไข]: สลับกลับเป็น root เพื่อให้ Script /start.sh ของ Image รันระบบตอนท้ายได้สมบูรณ์
+# สลับเป็น root เพื่อจัดการสิทธิ์โฟลเดอร์สำหรับ Laravel Storage
 USER root
+RUN chown -R nginx:nginx /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
 CMD ["/start.sh"]

@@ -46,6 +46,11 @@ Route::get('/debug-db', function () {
         'php_version' => PHP_VERSION,
         'app_env' => config('app.env'),
         'app_debug' => config('app.debug'),
+        'config_db_default' => config('database.default'),
+        'env_db_connection' => env('DB_CONNECTION'),
+        'getenv_db_connection' => getenv('DB_CONNECTION'),
+        'env_keys' => array_keys($_ENV),
+        'getenv_keys' => array_keys(getenv()),
     ];
 });
 
