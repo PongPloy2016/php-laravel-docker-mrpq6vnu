@@ -32,17 +32,28 @@ Route::get('/debug-db', function () {
         $dbStatus = "Database Connection Failed: " . $e->getMessage();
     }
 
+    $seederStatus = "Not Run";
     try {
         $settingsCount = \App\Setting::count();
+        if ($settingsCount === 0) {
+            // Force running migrations and seeding
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $seederExitCode = \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'SettingsSeeder', '--force' => true]);
+            $seederStatus = "Seeder Executed. Exit Code: $seederExitCode. Output: " . \Illuminate\Support\Facades\Artisan::output();
+            
+            // Re-fetch
+            $settingsCount = \App\Setting::count();
+        }
         $firstSetting = \App\Setting::first();
         $settingStatus = "Settings count: $settingsCount. First welcome text: " . ($firstSetting ? $firstSetting->welcome_txt : 'None');
     } catch (\Exception $e) {
-        $settingStatus = "Settings Query Failed: " . $e->getMessage();
+        $settingStatus = "Settings Query/Seed Failed: " . $e->getMessage();
     }
 
     return [
         'database' => $dbStatus,
         'settings' => $settingStatus,
+        'seeder_status' => $seederStatus,
         'php_version' => PHP_VERSION,
         'app_env' => config('app.env'),
         'app_debug' => config('app.debug'),
