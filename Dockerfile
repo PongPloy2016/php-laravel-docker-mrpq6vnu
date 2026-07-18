@@ -1,6 +1,9 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Copy source code
+# Allow composer to run as root (must set BEFORE COPY so it's available)
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+# Copy source code to web root
 COPY . /var/www/html
 
 # Set working directory
@@ -18,10 +21,9 @@ ENV APP_ENV production
 ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
 
-# Allow composer to run as root
-ENV COMPOSER_ALLOW_SUPERUSER 1
-
 # Run composer install at build time so vendor/ is always present
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction \
+    && test -f /var/www/html/vendor/autoload.php \
+    && echo "✅ vendor/autoload.php verified"
 
 CMD ["/start.sh"]
