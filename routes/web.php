@@ -36,10 +36,20 @@ Route::get('/debug-db', function () {
     try {
         $settingsCount = \App\Setting::count();
         if ($settingsCount === 0) {
-            // Force running migrations and seeding
+            // Force running migrations and seeding directly
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            $seederExitCode = \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'SettingsSeeder', '--force' => true]);
-            $seederStatus = "Seeder Executed. Exit Code: $seederExitCode. Output: " . \Illuminate\Support\Facades\Artisan::output();
+            
+            \Illuminate\Support\Facades\DB::table('settings')->insert([
+                'logo'          => 'default_logo.png',
+                'favicon'       => 'default_favicon.ico',
+                'welcome_txt'   => 'Quick Quiz',
+                'coming_soon'   => 0,
+                'comingsoon_enabled_ip' => null,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ]);
+            
+            $seederStatus = "Seeded directly using DB insert successfully!";
             
             // Re-fetch
             $settingsCount = \App\Setting::count();
